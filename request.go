@@ -4,22 +4,27 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 
 	"github.com/go-playground/validator/v10"
 )
 
+const baseURL = "https://api.zeptomail.com/v1.1"
+
 type Client struct {
-	client  *http.Client
-	baseURL *url.URL
-	apiKey  string
+	client    *http.Client
+	baseURL   *url.URL
+	mailAgent string
+	apiKey    string
 }
 
-func NewClient(baseUrl, apiKey string, defaultClient ...*http.Client) (*Client, error) {
-	u, err := url.Parse(baseUrl)
+func NewClient(mailAgent, apiKey string, defaultClient ...*http.Client) (*Client, error) {
+	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +42,10 @@ func NewClient(baseUrl, apiKey string, defaultClient ...*http.Client) (*Client, 
 	}
 
 	return &Client{
-		client:  httpClient,
-		baseURL: u,
-		apiKey:  apiKey,
+		client:    httpClient,
+		baseURL:   u,
+		mailAgent: mailAgent,
+		apiKey:    apiKey,
 	}, nil
 }
 
@@ -56,13 +62,18 @@ func request[S any, R any](
 	method string, endpoint *url.URL,
 	headers http.Header, payload S,
 ) (*WrappedResponse[R], error) {
-	if err := validate.Struct(&payload); err != nil && payload != nil {
-		return nil, err
-	}
+	v := reflect.ValueOf(payload)
+	hasPayload := v.IsValid() && !v.IsZero()
 
 	var buff bytes.Buffer
-	if err := json.NewEncoder(&buff).Encode(payload); err != nil && payload != nil {
-		return nil, fmt.Errorf("encoding failed: %w", err)
+	if hasPayload {
+		if err := validate.Struct(&payload); err != nil {
+			return nil, err
+		}
+
+		if err := json.NewEncoder(&buff).Encode(payload); err != nil {
+			return nil, fmt.Errorf("encoding failed: %w", err)
+		}
 	}
 
 	req, err := http.NewRequest(method, endpoint.String(), &buff)
@@ -71,7 +82,7 @@ func request[S any, R any](
 	}
 
 	req = req.WithContext(ctx)
-	if buff.Len() != 0 {
+	if hasPayload {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Authorization", c.apiKey)
@@ -84,10 +95,13 @@ func request[S any, R any](
 	if err != nil {
 		return &rv, fmt.Errorf("request failed: %w", err)
 	}
-	rv.RawResponse.Body = io.NopCloser(rv.RawResponse.Body)
 
-	if err = json.NewDecoder(rv.RawResponse.Body).Decode(&rv.Data); err != nil {
+	var body bytes.Buffer
+	rv.RawResponse.Body = io.NopCloser(io.TeeReader(rv.RawResponse.Body, &body))
+
+	if err = json.NewDecoder(rv.RawResponse.Body).Decode(&rv.Data); err != nil && !errors.Is(err, io.EOF) {
 		return &rv, fmt.Errorf("decoding failed: %w", err)
 	}
+	rv.RawResponse.Body = io.NopCloser(&body)
 	return &rv, nil
 }

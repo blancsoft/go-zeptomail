@@ -24,7 +24,7 @@ type (
 		From     EmailAddress  `json:"from" validate:"required"`
 		To       []SendEmailTo `json:"to" validate:"required"`
 		Subject  string        `json:"subject" validate:"required"`
-		Htmlbody string        `json:"htmlbody" validate:"required"`
+		HtmlBody string        `json:"htmlbody" validate:"required"`
 	}
 
 	// SendHTMLEmailRes is the SendHTMLEmail() response object
@@ -33,7 +33,7 @@ type (
 		Message   string             `json:"message"`
 		RequestId string             `json:"request_id"`
 		Object    string             `json:"object"`
-		Error     ErrorResponse      `json:"error"`
+		Error     *ErrorResponse     `json:"error"`
 	}
 
 	// SendEmailResData is the Data object for the SendHTMLEmailRes object
@@ -90,7 +90,7 @@ type (
 		*/
 		TrackClicks bool `json:"track_clicks"`
 		/*
-					You can enable or disable email open tracking.
+			You can enable or disable email open tracking.
 
 			You can also enable email open tracking in your Mail Agent under Email Tracking section.
 
@@ -132,7 +132,7 @@ type (
 			*/
 			MimeType string `json:"mime_type"`
 			/*
-				he file name of your attachment as in the File Cache section in your Mail Agent.
+				The file name of your attachment as in the File Cache section in your Mail Agent.
 
 				Obtain file name from the File Cache section in your Mail Agent.
 			*/
@@ -144,7 +144,7 @@ type (
 			*/
 			FileCacheKey string `json:"file_cache_key"`
 			/*
-				the content id used by html body for content lookup. Each content should be given a separate cid value.
+				The content id used by html body for content lookup. Each content should be given a separate cid value.
 
 				Allowed value
 
@@ -196,10 +196,10 @@ type (
 			AdditionalInfo []interface{} `json:"additional_info"`
 			Message        string        `json:"message"`
 		} `json:"data"`
-		Message   string        `json:"message"`
-		RequestId string        `json:"request_id"`
-		Object    string        `json:"object"`
-		Error     ErrorResponse `json:"error"`
+		Message   string         `json:"message"`
+		RequestId string         `json:"request_id"`
+		Object    string         `json:"object"`
+		Error     *ErrorResponse `json:"error"`
 	}
 
 	// SendBatchTemplatedEmailReq is the SendBatchTemplatedEmail() request object
@@ -278,7 +278,7 @@ type (
 			*/
 			MimeType string `json:"mime_type"`
 			/*
-				he file name of your attachment as in the File Cache section in your Mail Agent.
+				The file name of your attachment as in the File Cache section in your Mail Agent.
 
 				Obtain file name from the File Cache section in your Mail Agent.
 			*/
@@ -290,7 +290,7 @@ type (
 			*/
 			FileCacheKey string `json:"file_cache_key"`
 			/*
-				the content id used by html body for content lookup. Each content should be given a separate cid value.
+				The content id used by html body for content lookup. Each content should be given a separate cid value.
 
 				Allowed value
 
@@ -312,24 +312,25 @@ type (
 		TextBody string `json:"textbody"`
 		// 	Unique alias for the template. It can be used instead of the template key. It can be obtained from the Edit template section in your ZeptoMail account.
 		TemplateAlias string `json:"template_alias"`
-		// Unique alias value given to the Mail Agent. It is available in the Setup info section of your Mail Agent.
-		MailagentAlias string `json:"_" validate:"required"`
 	}
 
 	// AddEmailTemplateRes is the AddEmailTemplate() request object
 	AddEmailTemplateRes struct {
-		Data []struct {
-			HtmlBody      string `json:"htmlbody"`
-			UploadTime    string `json:"upload_time"`
-			Template_name string `json:"template_name"`
-			Template_key  string `json:"template_key"`
-			Template_size int    `json:"template_size"`
-			Modified_time string `json:"modified_time"`
-			Subject       string `json:"subject"`
+		Data struct {
+			TemplateName    string            `json:"template_name"`
+			TemplateAlias   string            `json:"template_alias"`
+			TemplateKey     string            `json:"template_key"`
+			TemplateLink    string            `json:"template_link"`
+			TemplateSize    int               `json:"template_size"` // present in docs but not included in response
+			CreatedTime     string            `json:"created_time"`
+			ModifiedTime    string            `json:"modified_time"`
+			Subject         string            `json:"subject"`
+			HtmlBody        string            `json:"htmlbody"`
+			TextBody        string            `json:"textbody"`
+			SampleMergeInfo map[string]string `json:"sample_merge_info"`
 		} `json:"data"`
-		Message string        `json:"message"`
-		Object  string        `json:"object"`
-		Error   ErrorResponse `json:"error"`
+		Message string         `json:"message"`
+		Error   *ErrorResponse `json:"error"`
 	}
 
 	// UpdateEmailTemplateReq is the UpdateEmailTemplate() response object
@@ -343,34 +344,49 @@ type (
 		// Plain text body of the email in the template.
 		TextBody string `json:"textbody"`
 		// TemplateKey is the template key.
-		TemplateKey string `json:"" validate:"required"`
-		// Unique alias value given to the Mail Agent. It is available in the Setup info section of your Mail Agent.
-		MailagentAlias string `json:"" validate:"required"`
+		TemplateKey string `json:"-" validate:"required"`
 	}
 
 	// GetEmailTemplateRes is the GetEmailTemplate() response object
 	GetEmailTemplateRes struct {
 		Data struct {
 			HtmlBody     string `json:"htmlbody"`
+			TextBody     string `json:"textbody"`
 			CreatedTime  string `json:"created_time"`
 			TemplateName string `json:"template_name"`
 			TemplateKey  string `json:"template_key"`
+			TemplateLink string `json:"template_link"`
 			ModifiedTime string `json:"modified_time"`
 			Attachments  []struct {
 				FileCacheKey string `json:"file_cache_key"`
 				ContentType  string `json:"content_type"`
 				FileName     string `json:"file_name"`
 			} `json:"attachments"`
+			Subject         string            `json:"subject"`
+			TemplateAlias   string            `json:"template_alias"`
+			SampleMergeInfo map[string]string `json:"sample_merge_info"`
+		} `json:"data"`
+		Message string         `json:"message"`
+		Object  string         `json:"object"`
+		Error   *ErrorResponse `json:"error"`
+	}
+
+	T2 struct {
+		Data struct {
+			CreatedTime     string `json:"created_time"`
+			TemplateName    string `json:"template_name"`
+			TemplateKey     string `json:"template_key"`
+			ModifiedTime    string `json:"modified_time"`
 			Subject         string `json:"subject"`
 			TemplateAlias   string `json:"template_alias"`
+			Textbody        string `json:"textbody"`
+			TemplateLink    string `json:"template_link"`
 			SampleMergeInfo struct {
-				Name string `json:"name"`
 				Link string `json:"link"`
 			} `json:"sample_merge_info"`
 		} `json:"data"`
-		Message string        `json:"message"`
-		Object  string        `json:"object"`
-		Error   ErrorResponse `json:"error"`
+		Message string `json:"message"`
+		Object  string `json:"object"`
 	}
 
 	// SendBatchHTMLEmailReq is the SendBatchHTMLEmail() request object
@@ -379,16 +395,16 @@ type (
 		To        []SendBatchTemplateEmailTo `json:"to" validate:"required"`
 		MergeInfo map[string]interface{}     `json:"merge_info" validate:"required"`
 		Subject   string                     `json:"subject" validate:"required"`
-		Htmlbody  string                     `json:"htmlbody" validate:"required"`
+		HtmlBody  string                     `json:"htmlbody" validate:"required"`
 	}
 
-	// SendHTMLEmailRes is the SendHTMLEmail() response object
+	// SendBatchHTMLEmailRes is the SendHTMLEmail() response object
 	SendBatchHTMLEmailRes struct {
 		Data      []SendBatchResData `json:"data"`
 		Message   string             `json:"message"`
 		RequestId string             `json:"request_id"`
 		Object    string             `json:"object"`
-		Error     ErrorResponse      `json:"error"`
+		Error     *ErrorResponse     `json:"error"`
 	}
 
 	// SendBatchResData is the Data object for the SendHTMLEmailRes object
@@ -412,7 +428,7 @@ type (
 		Data         []FileCacheUploadAPIResData `json:"data"`
 		Message      string                      `json:"message"`
 		Object       string                      `json:"object"`
-		Error        ErrorResponse               `json:"error"`
+		Error        *ErrorResponse              `json:"error"`
 	}
 
 	// FileCacheUploadAPIResData is the Data object for the FileCacheUploadAPIRes object
@@ -429,7 +445,7 @@ type (
 			Offset int `json:"offset"`
 			Limit  int `json:"limit"`
 		}
-		Data struct {
+		Data []struct {
 			CreatedTime   string `json:"created_time"`
 			TemplateName  string `json:"template_name"`
 			TemplateKey   string `json:"template_key"`
@@ -437,7 +453,7 @@ type (
 			Subject       string `json:"subject"`
 			TemplateAlias string `json:"template_alias"`
 		} `json:"data"`
-		Message string        `json:"message"`
-		Error   ErrorResponse `json:"error"`
+		Message string         `json:"message"`
+		Error   *ErrorResponse `json:"error"`
 	}
 )
