@@ -1,5 +1,10 @@
 package zeptomail
 
+import (
+	"fmt"
+	"strings"
+)
+
 type ZeptoMail struct {
 	Email     Email
 	FileCache FileCache
@@ -7,13 +12,25 @@ type ZeptoMail struct {
 }
 
 // NewZeptoMail initializes the ZeptoMail client
-func NewZeptoMail(mailAgent, apiKey, managementToken string) (*ZeptoMail, error) {
+func NewZeptoMail(mailAgent, apiKey, oauthToken string) (*ZeptoMail, error) {
+	const (
+		apiKeyPrefix     = "Zoho-enczapikey"
+		oauthTokenPrefix = "Zoho-oauthtoken"
+	)
+	if apiKey != "" && !strings.HasPrefix(apiKey, apiKeyPrefix) {
+		apiKey = fmt.Sprintf("%s %s", apiKeyPrefix, strings.TrimSpace(apiKey))
+	}
+
+	if oauthToken != "" && !strings.HasPrefix(oauthToken, "Zoho-oauthtoken") {
+		oauthToken = fmt.Sprintf("%s %s", oauthTokenPrefix, strings.TrimSpace(oauthToken))
+	}
+
 	emailClient, err := NewClient(mailAgent, apiKey)
 	if err != nil {
 		return nil, err
 	}
 
-	mgmtClient, err := NewClient(mailAgent, managementToken)
+	mgmtClient, err := NewClient(mailAgent, oauthToken)
 	if err != nil {
 		return nil, err
 	}

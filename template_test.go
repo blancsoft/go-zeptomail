@@ -1,7 +1,9 @@
 package zeptomail_test
 
 import (
+	"crypto/rand"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,12 +13,12 @@ import (
 )
 
 func TestZeptoMailTemplate(t *testing.T) {
-	//t.Skip("Requires Oauth2 Token. Complicated process")
+	aliasSuffix := strings.ToLower(rand.Text()[:10])
 	tmpl := zeptomail.AddEmailTemplateReq{
 		TemplateName:  "E-invite",
 		Subject:       "Invitation to the event",
 		HtmlBody:      "<h1> Hi {{name}}</h1>, invitation link {{link}}",
-		TemplateAlias: "en_invite",
+		TemplateAlias: "en_invite_" + aliasSuffix,
 	}
 	tmplUpdate := zeptomail.UpdateEmailTemplateReq{
 		TemplateName: "Invite Link",

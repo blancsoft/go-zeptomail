@@ -15,7 +15,7 @@ func TestZeptoMailFileCache(t *testing.T) {
 	require.NoError(t, err)
 
 	rv, err := zepto.FileCache.FileCacheUploadAPI(t.Context(), zeptomail.FileCacheUploadAPIReq{
-		FileName:    "test_attachment.ico",
+		FileName:    "test_filecache.ico",
 		FileContent: fileAttachment,
 	})
 	require.NoError(t, err)

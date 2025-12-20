@@ -17,13 +17,13 @@ import (
 const baseURL = "https://api.zeptomail.com/v1.1"
 
 type Client struct {
-	client    *http.Client
-	baseURL   *url.URL
-	mailAgent string
-	apiKey    string
+	client        *http.Client
+	baseURL       *url.URL
+	mailAgent     string
+	authorisation string
 }
 
-func NewClient(mailAgent, apiKey string, defaultClient ...*http.Client) (*Client, error) {
+func NewClient(mailAgent, authorisation string, defaultClient ...*http.Client) (*Client, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
@@ -42,10 +42,10 @@ func NewClient(mailAgent, apiKey string, defaultClient ...*http.Client) (*Client
 	}
 
 	return &Client{
-		client:    httpClient,
-		baseURL:   u,
-		mailAgent: mailAgent,
-		apiKey:    apiKey,
+		client:        httpClient,
+		baseURL:       u,
+		mailAgent:     mailAgent,
+		authorisation: authorisation,
 	}, nil
 }
 
@@ -74,6 +74,10 @@ func request[S any, R any](
 		if err := json.NewEncoder(&buff).Encode(payload); err != nil {
 			return nil, fmt.Errorf("encoding failed: %w", err)
 		}
+
+		{ // TODO: Remove me
+			fmt.Printf("RAW PAYLOAD: %s\n", buff.String())
+		}
 	}
 
 	req, err := http.NewRequest(method, endpoint.String(), &buff)
@@ -85,7 +89,7 @@ func request[S any, R any](
 	if hasPayload {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("Authorization", c.apiKey)
+	req.Header.Set("Authorization", c.authorisation)
 	for k, v := range headers {
 		req.Header[k] = v
 	}
